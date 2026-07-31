@@ -1,8 +1,7 @@
 import 'package:client_connect/Provider/auth_provider.dart';
-import 'package:client_connect/screens/auth/forgot_password.dart';
-import 'package:client_connect/screens/auth/signup_screen.dart';
-import 'package:client_connect/screens/home/home_screen.dart';
+import 'package:client_connect/utils/validators.dart';
 import 'package:client_connect/widgets/app_text_field.dart';
+import 'package:client_connect/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,182 +13,264 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController =
+  TextEditingController();
 
-  bool isObscure = true;
+  final TextEditingController _passwordController =
+  TextEditingController();
+
+  bool _isPasswordObscure = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    FocusScope.of(context).unfocus();
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
+
+    final error = await authProvider.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (error == null) {
+      _showSnackBar("Login successful.");
+
+      // Abhi HomeScreen add nahi kar rahe.
+      // HomeScreen banne ke baad yahan navigation add karenge.
+    } else {
+      _showSnackBar(
+        _getReadableError(error),
+        isError: true,
+      );
+    }
+  }
+
+  String _getReadableError(String error) {
+    if (error.contains("user-not-found")) {
+      return "No account found with this email.";
+    }
+
+    if (error.contains("wrong-password")) {
+      return "Incorrect email or password.";
+    }
+
+    if (error.contains("invalid-credential")) {
+      return "Incorrect email or password.";
+    }
+
+    if (error.contains("invalid-email")) {
+      return "Please enter a valid email address.";
+    }
+
+    if (error.contains("user-disabled")) {
+      return "This account has been disabled.";
+    }
+
+    if (error.contains("network-request-failed")) {
+      return "No internet connection.";
+    }
+
+    return "Something went wrong. Please try again.";
+  }
+
+  void _showSnackBar(
+      String message, {
+        bool isError = false,
+      }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 15),
+        child: Form(
+          key: _formKey,
+
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 20,
+            ),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 20,),
-                Text("Welcome back",style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),),
-                SizedBox(height: 8,),
-                Text("Login to continue using\nClient Connect",textAlign: TextAlign.center, style: TextStyle(fontSize: 16,height: 1.5,color: Colors.grey),),
-                SizedBox(height: 45,),
-                Text("Email",style: TextStyle(fontWeight: FontWeight.w600),),
-                SizedBox(height: 10,),
+                const SizedBox(height: 30),
+
+                const Text(
+                  "Welcome Back",
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  "Login to continue to Client Connect",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                const Text(
+                  "Email",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
                 AppTextField(
                   controller: _emailController,
                   hintText: "Enter your email",
                   keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    return Validators.email(
+                      value ?? "",
+                    );
+                  },
                 ),
-                SizedBox(height: 25,),
-                Text("Password",style: TextStyle(fontWeight: FontWeight.w600),),
-                SizedBox(height: 10,),
+
+                const SizedBox(height: 25),
+
+                const Text(
+                  "Password",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
                 AppTextField(
                   controller: _passwordController,
                   hintText: "Enter your password",
-                  obscureText: isObscure,
-                  suffixIcon: IconButton(onPressed: (){
-                    setState(() {
-                      isObscure = !isObscure;
-                    });
-                  }, icon: Icon(
-                    isObscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  )),
+                  obscureText: _isPasswordObscure,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Password is required";
+                    }
+
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordObscure =
+                        !_isPasswordObscure;
+                      });
+                    },
+                    icon: Icon(
+                      _isPasswordObscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
                 ),
-                SizedBox(height: 15,),
+
+                const SizedBox(height: 10),
+
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton(onPressed: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => ForgotPasswordScreen()));
-                  }, child: Text("Forgot Password?")
+                  child: TextButton(
+                    onPressed: () {
+                      // Forgot Password next step me banayenge.
+                    },
+                    child: const Text(
+                      "Forgot Password?",
+                      style: TextStyle(
+                        color: Color(0xff7B61FF),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
-                SizedBox(height: 15,),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(onPressed: ()async{
 
-                      final email = _emailController.text.trim();
+                const SizedBox(height: 20),
 
-                      final password = _passwordController.text.trim();
-
-                      if (email.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter email"),
-                          ),
-                        );
-                        return;
-                      }
-                      if (!email.contains("@")) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Invalid email"),
-                          ),
-                        );
-                        return;
-                      }
-
-                      if (password.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter password"),
-                          ),
-                        );
-                        return;
-                      }
-
-                      final provider = context.read<AuthProvider>();
-
-                      final error = await provider.login(email: email, password: password,
+                Consumer<AuthProvider>(
+                  builder: (
+                      context,
+                      authProvider,
+                      child,
+                      ) {
+                    if (authProvider.isLoading) {
+                      return const SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
                       );
+                    }
 
-                      if (!mounted) return;
-
-                      if (error == null) {
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Login Successful"),
-                          ),
-                        );
-
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen(),
-                          ),
-                        );
-
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(error),
-                          ),
-                        );
-                      }
+                    return PrimaryButton(
+                      title: "Login",
+                      onPressed: _login,
+                    );
                   },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xff5B5FFF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadiusGeometry.circular(16)
-                      )
+                ),
+
+                const SizedBox(height: 100),
+
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text.rich(
+                      TextSpan(
+                        text: "Don't have an account? ",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 15,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: "Sign Up",
+                            style: TextStyle(
+                              color: Color(0xff7B61FF),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                      child: Text("Login",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold,color: Colors.white),
-                      )
                   ),
                 ),
-                SizedBox(height: 36,),
-                Center(child: Text("or continue with",style: TextStyle(color: Colors.grey,fontWeight: FontWeight.bold),)),
-                SizedBox(height: 25,),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 55,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                          ),
-                          borderRadius: BorderRadius.circular(14)
-                        ),
-                        child: Center(child:
-                        Image.asset("assets/icons/Google.png",height: 30,width: 30,)
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 15,),
-                    Expanded(
-                      child: Container(
-                        height: 55,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Center(child: Icon(Icons.apple,size: 30,)
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-                SizedBox(height: 50,),
-          
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Don't have an account?",style: TextStyle(color: Colors.grey,fontSize: 15),),
-                    TextButton(onPressed: (){
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SignupScreen()));
-                    }, child: Text("Sign Up"))
-                  ],
-                ),
-                SizedBox(height: 20,)
+
+                const SizedBox(height: 20),
               ],
             ),
           ),

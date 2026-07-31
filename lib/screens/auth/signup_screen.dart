@@ -1,6 +1,8 @@
 import 'package:client_connect/Provider/auth_provider.dart';
 import 'package:client_connect/screens/auth/login_screen.dart';
+import 'package:client_connect/utils/validators.dart';
 import 'package:client_connect/widgets/app_text_field.dart';
+import 'package:client_connect/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,168 +14,328 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+
   final TextEditingController _emailController = TextEditingController();
+
   final TextEditingController _passwordController = TextEditingController();
 
-  bool isObscure = true;
-  bool isChecked = true;
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  bool _isPasswordObscure = true;
+  bool _isConfirmPasswordObscure = true;
+  bool _isTermsAccepted = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+
+    super.dispose();
+  }
+
+  Future<void> _signup() async {
+    FocusScope.of(context).unfocus();
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_isTermsAccepted) {
+      _showSnackBar(
+        "Please accept Terms & Conditions.",
+        isError: true,
+      );
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
+
+    final error = await authProvider.signup(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (error == null) {
+      _showSnackBar(
+        "Account created successfully. Please verify your email.",
+      );
+
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    } else {
+      _showSnackBar(
+        _getReadableError(error),
+        isError: true,
+      );
+    }
+  }
+
+  String _getReadableError(String error) {
+    if (error.contains("email-already-in-use")) {
+      return "This email is already registered.";
+    }
+
+    if (error.contains("invalid-email")) {
+      return "Please enter a valid email address.";
+    }
+
+    if (error.contains("weak-password")) {
+      return "Password is too weak.";
+    }
+
+    if (error.contains("network-request-failed")) {
+      return "No internet connection.";
+    }
+
+    return "Something went wrong. Please try again.";
+  }
+
+  void _showSnackBar(
+      String message, {
+        bool isError = false,
+      }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 20),
+        child: Form(
+          key: _formKey,
+
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 20,
+            ),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // IconButton(onPressed: (){
-                //   Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
-                // }, icon: Icon(Icons.arrow_back_ios)),
-          
-                SizedBox(height: 20,),
-                Text("Create Account",style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),),
-                SizedBox(height: 8,),
-                Text("Sign up to get started",style: TextStyle(fontSize: 16,color: Colors.grey),),
-                SizedBox(height: 45,),
-                Text("Full Name",style: TextStyle(fontWeight: FontWeight.w600),),
-                SizedBox(height: 10,),
-                AppTextField(
-                  controller: _fullNameController,
-                  hintText: "Enter your Full Name",
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  "Create Account",
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                SizedBox(height: 25,),
-                Text("Email",style: TextStyle(fontWeight: FontWeight.w600),),
-                SizedBox(height: 10,),
+
+                const SizedBox(height: 8),
+
+                const Text("Sign up to get started", style: TextStyle(color: Colors.grey, fontSize: 16,),
+                ),
+
+                const SizedBox(height: 40),
+
+                const Text("Full Name", style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 10),
+
+                AppTextField(
+                  controller: _nameController,
+                  hintText: "Enter your name",
+                  validator: (value){
+                    return Validators.name(value ?? "");
+                  }
+                ),
+
+                const SizedBox(height: 25),
+
+                const Text("Email", style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 10),
+
                 AppTextField(
                   controller: _emailController,
                   hintText: "Enter your email",
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value){
+                    return Validators.email(value ?? "");
+                  },
                 ),
-                SizedBox(height: 25,),
-                Text("Password",style: TextStyle(fontWeight: FontWeight.w600),),
-                SizedBox(height: 10,),
+
+                const SizedBox(height: 25),
+
+                const Text("Password", style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 10),
+
                 AppTextField(
                   controller: _passwordController,
                   hintText: "Enter your password",
-                  obscureText: isObscure,
-                  suffixIcon: IconButton(onPressed: (){
-                    setState(() {
-                      isObscure = !isObscure;
-                    });
-                  }, icon: Icon(
-                      isObscure
+                  obscureText: _isPasswordObscure,
+                  validator: (value){
+                    return Validators.password(value ?? "");
+                  },
+
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordObscure =
+                        !_isPasswordObscure;
+                      });
+                    },
+
+                    icon: Icon(
+                      _isPasswordObscure
                           ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined
-                  )
+                          : Icons.visibility_outlined,
+                    ),
                   ),
                 ),
-                SizedBox(height: 15,),
+
+                const SizedBox(height: 25),
+
+                const Text("Confirm Password", style: TextStyle(fontWeight: FontWeight.w600,),
+                ),
+
+                const SizedBox(height: 10),
+
+                AppTextField(
+                  controller: _confirmPasswordController,
+                  hintText: "Confirm your password",
+                  obscureText: _isConfirmPasswordObscure,
+                  validator: (value){
+                    if(value == null || value.isEmpty){
+                      return "Please confirm your password";
+                    }
+                    if(value != _passwordController.text){
+                      return "Passwords do not match";
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isConfirmPasswordObscure =
+                        !_isConfirmPasswordObscure;
+                      });
+                    },
+
+                    icon: Icon(
+                      _isConfirmPasswordObscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Checkbox(
-                        value: isChecked,
-                        onChanged: (value){
-                          setState(() {
-                            isChecked = value!;
-                          });
-                        }),
-          
-                    Text("I agree to the",style: TextStyle(color: Colors.black87),),
-                    TextButton(onPressed: (){
-          
-                    }, child: Text("Terms & Conditions")),
-                  ],
-                ),
-                SizedBox(height: 25,),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(onPressed: ()async{
+                      value: _isTermsAccepted,
 
-                      final email = _emailController.text.trim();
+                      onChanged: (value) {
+                        setState(() {
+                          _isTermsAccepted =
+                              value ?? false;
+                        });
+                      },
+                    ),
 
-                      final password = _passwordController.text.trim();
-
-                      if (email.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter email"),
-                          ),
-                        );
-                        return;
-                      }
-
-                      if (!email.contains("@")) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Invalid email"),
-                          ),
-                        );
-                        return;
-                      }
-
-                      if (password.length < 6) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Password must be at least 6 characters",
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-
-                      final provider = context.read<AuthProvider>();
-
-                      final error = await provider.signup(
-                        email: email,
-                        password: password,
-                      );
-                      if (!mounted) return;
-                      if (error == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Account Created Successfully.\nVerification email sent.",
-                            ),
-                          ),
-                        );
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen(),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(error),
-                          ),
-                        );
-                      }
-                    },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xff5B5FFF),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadiusGeometry.circular(16)
-                        )
+                    const Expanded(
+                      child: Text(
+                        "I agree to the Terms & Conditions",
+                        style: TextStyle(
+                          fontSize: 14,
+                        ),
                       ),
-                      child: Text("Sign Up",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold,color: Colors.white),)),
-                ),
-                SizedBox(height: 50,),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Already have an account?",style: TextStyle(fontSize: 15,color: Colors.grey),),
-                    TextButton(onPressed: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
-                    }, child: Text("Login",style: TextStyle(fontWeight: FontWeight.bold,color: Color(0xff7B61FF)),)),
-                    SizedBox(height: 12,),
+                    ),
                   ],
-                )
+                ),
+
+                const SizedBox(height: 25),
+
+                Consumer<AuthProvider>(
+                  builder: (
+                      context,
+                      authProvider,
+                      child,
+                      ) {
+                    if (authProvider.isLoading) {
+                      return const SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    return PrimaryButton(
+                      title: "Sign Up",
+                      onPressed: _signup,
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 100),
+
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+
+                    child: const Text.rich(
+                      TextSpan(
+                        text: "Already have an account? ",
+
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 15,
+                        ),
+
+                        children: [
+                          TextSpan(
+                            text: "Login",
+                            style: TextStyle(
+                              color: Color(0xff7B61FF),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
               ],
             ),
           ),

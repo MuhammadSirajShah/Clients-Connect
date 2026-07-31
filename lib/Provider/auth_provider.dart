@@ -1,93 +1,159 @@
+import 'package:client_connect/models/user_model.dart';
 import 'package:client_connect/services/auth_service.dart';
+import 'package:client_connect/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class AuthProvider extends ChangeNotifier{
+class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
 
   bool _isLoading = false;
+
   bool get isLoading => _isLoading;
 
-  void setLoading(bool value){
+  void setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
-  // SignUp Setup
+  // =========================
+  // SIGN UP
+  // =========================
+
   Future<String?> signup({
+    required String name,
     required String email,
     required String password,
-})async {
-    try{
+  }) async {
+    try {
       setLoading(true);
-      await _authService.signup(
-          email: email,
-          password: password
+
+      final userCredential = await _authService.signup(
+        email: email,
+        password: password,
       );
-      await _authService.sendEmailVerification();
-      return null;
-    } catch(e){
-      if(e is FirebaseAuthException){
-        switch(e.code){
-          case "email-already-in-use":
-            return "You are already registered.";
-          case "invalid-email":
-            return "Invalid email.";
-          case "weak-password":
-            return "Password is too weak.";
 
-          default: return e.message;
-        }
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        return "Account could not be created.";
       }
-      return e.toString();
-    }
-}
 
-  // Login setup
+      final user = UserModel(
+        uid: firebaseUser.uid,
+        name: name.trim(),
+        email: firebaseUser.email ?? email.trim(),
+        profileImage: null,
+        createdAt: DateTime.now(),
+      );
+
+      await _userService.createUserProfile(
+        user: user,
+      );
+
+      await _authService.sendEmailVerification();
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "email-already-in-use") {
+        return "This email is already registered.";
+      }
+
+      if (e.code == "invalid-email") {
+        return "Please enter a valid email address.";
+      }
+
+      if (e.code == "weak-password") {
+        return "Password is too weak.";
+      }
+
+      if (e.code == "network-request-failed") {
+        return "No internet connection.";
+      }
+
+      return e.message ?? "Something went wrong.";
+    } catch (e) {
+      return "Something went wrong. Please try again.";
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // =========================
+  // LOGIN
+  // =========================
+
   Future<String?> login({
     required String email,
     required String password,
-})async {
-    try{
+  }) async {
+    try {
       setLoading(true);
+
       await _authService.login(
-          email: email,
-          password: password
+        email: email,
+        password: password,
       );
+
       return null;
-    }catch(e){
-      if(e is FirebaseAuthException){
-        switch(e.code){
-          case "user-not-found":
-            return "No account found.";
-          case "wrong-password":
-            return "Invalid password.";
-          case "invalid-credential":
-            return "Invalid email or password.";
-          case "invalid-email":
-            return "Invalid email.";
-          default:
-            return e.message;
-        }
-      }
+    } catch (e) {
       return e.toString();
+    } finally {
+      setLoading(false);
     }
-}
-
-  // forgot Password Setup
-  Future<String?> forgotPassword(String email) async{
-
-    _isLoading = true;
-    notifyListeners();
-    final error = await _authService.resetPassword(email);
-
-    _isLoading = false;
-    notifyListeners();
-    return error;
   }
 
-  // logout Setup
-  Future<void> logout() async{
+  // =========================
+  // FORGOT PASSWORD
+  // =========================
+
+  Future<String?> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      setLoading(true);
+
+      await _authService.forgotPassword(
+        email,
+      );
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "user-not-found") {
+        return "User not found";
+      }
+
+      if (e.code == "invalid-email") {
+        return "Invalid email";
+      }
+
+      return e.message ?? "Something went wrong";
+    } catch (e) {
+      return e.toString();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // =========================
+  // LOGOUT
+  // =========================
+
+  Future<void> logout() async {
     await _authService.logout();
   }
+
+  // =========================
+  // CURRENT USER
+  // =========================
+
+  get currentUser => _authService.currentUser;
+
+  // =========================
+  // AUTH STATE
+  // =========================
+
+  Stream get authStateChanges =>
+      _authService.authStateChanges;
 }

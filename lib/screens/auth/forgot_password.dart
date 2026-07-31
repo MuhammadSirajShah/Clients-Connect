@@ -78,7 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   );
                   return;
                 }
-                if(email.contains("@")){
+                if(!email.contains("@")){
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                         content: Text("Invalid email"),
@@ -87,7 +87,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   return;
                 }
                 final provider = context.read<AuthProvider>();
-                final error = await provider.forgotPassword(email);
+                final error = await provider.forgotPassword(email: email);
 
                 if(!mounted) return;
                 if(error == null){
@@ -110,7 +110,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   borderRadius: BorderRadiusGeometry.circular(14)
                 )
                 ),
-                child: context.watch<AuthProvider>().isLoading ? CircularProgressIndicator(color: Colors.white,)
+                child: context.watch<AuthProvider>().isLoading ? SizedBox(height:25,width: 25,child:CircularProgressIndicator(color: Colors.white,strokeWidth: 3,
+                  ),
+                )
                 : Text("Send Reset Link", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold,
                   ),
                 ),
