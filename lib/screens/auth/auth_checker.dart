@@ -2,6 +2,7 @@ import 'package:client_connect/Provider/auth_provider.dart';
 import 'package:client_connect/screens/auth/email_verification_screen.dart';
 import 'package:client_connect/screens/auth/login_screen.dart';
 import 'package:client_connect/screens/home/home_screen.dart';
+import 'package:client_connect/screens/navigation/bottom_nav_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,7 +36,7 @@ class AuthChecker extends StatelessWidget {
         }
 
         // User logged in and email verified
-        return const HomeScreen();
+        return const BottomNavScreen();
       },
     );
   }

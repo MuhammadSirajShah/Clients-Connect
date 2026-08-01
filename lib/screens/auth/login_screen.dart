@@ -1,5 +1,6 @@
 import 'package:client_connect/Provider/auth_provider.dart';
 import 'package:client_connect/screens/auth/forgot_password.dart';
+import 'package:client_connect/screens/auth/signup_screen.dart';
 import 'package:client_connect/utils/validators.dart';
 import 'package:client_connect/widgets/app_text_field.dart';
 import 'package:client_connect/widgets/primary_button.dart';
@@ -212,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => SignupScreen()));
                     },
                     child: const Text.rich(
                       TextSpan(

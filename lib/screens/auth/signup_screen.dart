@@ -69,7 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       await Future.delayed(
-        const Duration(milliseconds: 500),
+        const Duration(milliseconds: 100),
       );
 
       if (!mounted) return;

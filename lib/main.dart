@@ -3,6 +3,7 @@ import 'package:client_connect/firebase_options.dart';
 import 'package:client_connect/screens/auth/auth_checker.dart';
 import 'package:client_connect/screens/auth/email_verification_screen.dart';
 import 'package:client_connect/screens/home/home_screen.dart';
+import 'package:client_connect/screens/navigation/bottom_nav_screen.dart';
 import 'package:client_connect/screens/onboarding/onboarding_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -34,10 +35,9 @@ class ClientConnectApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Client Connect',
-      // home: const OnboardingScreen(),
-      // home: const EmailVerificationScreen(),
-      // home: const AuthChecker(),
-      home: const HomeScreen(),
+      // home: const SplashScreen(),
+      home: const SplashScreen(),
+
     );
   }
 }
