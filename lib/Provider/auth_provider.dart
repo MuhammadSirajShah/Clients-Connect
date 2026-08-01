@@ -144,6 +144,32 @@ class AuthProvider extends ChangeNotifier {
     await _authService.logout();
   }
 
+  Future<bool> checkEmailVerification() async {
+    try {
+      await _authService.reloadUser();
+
+      final user = _authService.currentUser;
+
+      return user?.emailVerified ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<String?> resendVerificationEmail() async {
+    try {
+      setLoading(true);
+
+      await _authService.sendEmailVerification();
+
+      return null;
+    } catch (e) {
+      return "Unable to send verification email.";
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // =========================
   // CURRENT USER
   // =========================

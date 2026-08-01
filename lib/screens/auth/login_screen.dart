@@ -1,4 +1,5 @@
 import 'package:client_connect/Provider/auth_provider.dart';
+import 'package:client_connect/screens/auth/forgot_password.dart';
 import 'package:client_connect/utils/validators.dart';
 import 'package:client_connect/widgets/app_text_field.dart';
 import 'package:client_connect/widgets/primary_button.dart';
@@ -15,11 +16,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _emailController =
-  TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _passwordController =
-  TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   bool _isPasswordObscure = true;
 
@@ -49,8 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (error == null) {
       _showSnackBar("Login successful.");
 
-      // Abhi HomeScreen add nahi kar rahe.
-      // HomeScreen banne ke baad yahan navigation add karenge.
     } else {
       _showSnackBar(
         _getReadableError(error),
@@ -110,7 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Form(
           key: _formKey,
-
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: 20,
@@ -122,32 +118,12 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 30),
 
-                const Text(
-                  "Welcome Back",
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
+                const Text("Welcome Back", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold,)),
                 const SizedBox(height: 8),
-
-                const Text(
-                  "Login to continue to Client Connect",
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16,
-                  ),
-                ),
+                const Text("Login to continue to Client Connect", style: TextStyle(color: Colors.grey, fontSize: 16,),),
 
                 const SizedBox(height: 40),
-
-                const Text(
-                  "Email",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text("Email", style: TextStyle(fontWeight: FontWeight.w600,),),
 
                 const SizedBox(height: 10),
 
@@ -161,15 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                 ),
-
                 const SizedBox(height: 25),
-
-                const Text(
-                  "Password",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text("Password", style: TextStyle(fontWeight: FontWeight.w600),),
 
                 const SizedBox(height: 10),
 
@@ -181,7 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (value == null || value.isEmpty) {
                       return "Password is required";
                     }
-
                     return null;
                   },
                   suffixIcon: IconButton(
@@ -205,15 +173,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Forgot Password next step me banayenge.
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ForgotPasswordScreen(),
+                        ),
+                      );
                     },
-                    child: const Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        color: Color(0xff7B61FF),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: const Text("Forgot Password?", style: TextStyle(color: Color(0xff7B61FF), fontWeight: FontWeight.w600,),),
                   ),
                 ),
 
@@ -234,7 +201,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       );
                     }
-
                     return PrimaryButton(
                       title: "Login",
                       onPressed: _login,
@@ -243,7 +209,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 100),
-
                 Center(
                   child: GestureDetector(
                     onTap: () {
