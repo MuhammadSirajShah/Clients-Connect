@@ -1,6 +1,8 @@
 import 'package:client_connect/Provider/auth_provider.dart';
 import 'package:client_connect/screens/auth/forgot_password.dart';
 import 'package:client_connect/screens/auth/signup_screen.dart';
+import 'package:client_connect/screens/home/home_screen.dart';
+import 'package:client_connect/screens/navigation/bottom_nav_screen.dart';
 import 'package:client_connect/utils/validators.dart';
 import 'package:client_connect/widgets/app_text_field.dart';
 import 'package:client_connect/widgets/primary_button.dart';
@@ -48,6 +50,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (error == null) {
       _showSnackBar("Login successful.");
+
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const BottomNavScreen(),
+        ),
+      );
 
     } else {
       _showSnackBar(
