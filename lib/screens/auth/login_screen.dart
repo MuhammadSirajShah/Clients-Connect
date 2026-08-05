@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _showSnackBar("Login successful.");
 
       await Future.delayed(
-        const Duration(milliseconds: 500),
+        const Duration(milliseconds: 100),
       );
 
       if (!mounted) return;
