@@ -1,12 +1,13 @@
-import 'package:client_connect/models/user_model.dart';
+
+import 'package:client_connect/models/user_profile_model.dart';
 import 'package:client_connect/services/auth_service.dart';
-import 'package:client_connect/services/user_service.dart';
+import 'package:client_connect/services/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
-  final UserService _userService = UserService();
+  final ProfileService _profileService = ProfileService();
 
   bool _isLoading = false;
 
@@ -40,17 +41,17 @@ class AuthProvider extends ChangeNotifier {
         return "Account could not be created.";
       }
 
-      final user = UserModel(
+      final profile = UserProfileModel(
         uid: firebaseUser.uid,
         name: name.trim(),
         email: firebaseUser.email ?? email.trim(),
         profileImage: null,
+        bio: "",
+        skills: [],
         createdAt: DateTime.now(),
       );
 
-      await _userService.createUserProfile(
-        user: user,
-      );
+      await _profileService.createProfile(profile);
 
       await _authService.sendEmailVerification();
 

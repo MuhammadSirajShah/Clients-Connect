@@ -1,7 +1,7 @@
-import 'package:client_connect/screens/home/chat_screen.dart';
-import 'package:client_connect/screens/home/community_screen.dart';
+import 'package:client_connect/screens/chat/chat_list_screen.dart';
+import 'package:client_connect/screens/community/community_screen.dart';
 import 'package:client_connect/screens/home/home_screen.dart';
-import 'package:client_connect/screens/home/profile_screen.dart';
+import 'package:client_connect/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 
 class BottomNavScreen extends StatefulWidget {
@@ -18,7 +18,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   final List<Widget> pages = [
     HomeScreen(),
     CommunityScreen(),
-    ChatsScreen(),
+    ChatListScreen(),
     ProfileScreen(),
   ];
 
