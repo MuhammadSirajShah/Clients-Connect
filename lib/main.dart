@@ -1,4 +1,6 @@
 import 'package:client_connect/Provider/auth_provider.dart';
+import 'package:client_connect/Provider/post_provider.dart';
+import 'package:client_connect/Provider/profile_provider.dart';
 import 'package:client_connect/firebase_options.dart';
 import 'package:client_connect/screens/auth/auth_checker.dart';
 import 'package:client_connect/screens/auth/email_verification_screen.dart';
@@ -19,7 +21,11 @@ void main() async{
   runApp(
       MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()
+        ChangeNotifierProvider(create: (_) => AuthProvider(),
+        ),
+        ChangeNotifierProvider(create: (_) => PostProvider(),
+        ),
+        ChangeNotifierProvider(create: (_) => ProfileProvider(),
         ),
       ],
         child: ClientConnectApp()
