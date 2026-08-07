@@ -46,9 +46,7 @@ class ChatListScreen extends StatelessWidget {
                   ),
 
                   title: const Text(
-                    "Muhammad Ali",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                    "Muhammad Ali", style: TextStyle(fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -59,14 +57,10 @@ class ChatListScreen extends StatelessWidget {
                   ),
 
                   trailing: Column(
-                    mainAxisAlignment:
-                    MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
 
                     children: [
-
-                      const Text(
-                        "10:30 AM",
-                        style: TextStyle(fontSize: 12),
+                      const Text("10:30 AM", style: TextStyle(fontSize: 12),
                       ),
 
                       const SizedBox(height: 6),
@@ -81,11 +75,7 @@ class ChatListScreen extends StatelessWidget {
                         ),
 
                         child: const Center(
-                          child: Text(
-                            "2",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
+                          child: Text("2", style: TextStyle(color: Colors.white, fontSize: 11,
                             ),
                           ),
                         ),

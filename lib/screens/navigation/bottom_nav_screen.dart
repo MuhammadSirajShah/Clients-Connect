@@ -19,7 +19,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     HomeScreen(),
     CommunityScreen(),
     ChatListScreen(),
-    ProfileScreen(),
+    ProfileScreen()
   ];
 
 
