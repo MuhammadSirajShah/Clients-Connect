@@ -1,50 +1,70 @@
-import 'package:client_connect/models/post_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:client_connect/models/post_model.dart';
 
 class PostService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance;
 
-  final String _collection = "posts";
+  // ==========================================
+  // POSTS COLLECTION
+  // ==========================================
 
-  // Create Post
+  CollectionReference<Map<String, dynamic>> get _postsCollection =>
+      _firestore.collection('posts');
+
+  // ==========================================
+  // CREATE POST
+  // ==========================================
+
   Future<void> createPost(PostModel post) async {
-    await _firestore
-        .collection(_collection)
+    await _postsCollection
         .doc(post.postId)
         .set(post.toMap());
   }
 
-  // Get All Posts (Realtime)
+  // ==========================================
+  // GET POSTS - REALTIME
+  // ==========================================
+
   Stream<List<PostModel>> getPosts() {
-    return _firestore
-        .collection(_collection)
-        .orderBy("createdAt", descending: true)
+    return _postsCollection
+        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => PostModel.fromMap(doc.data()))
-          .toList();
-    });
+        .map(
+          (snapshot) {
+        return snapshot.docs.map(
+              (doc) {
+            return PostModel.fromMap(
+              doc.data(),
+            );
+          },
+        ).toList();
+      },
+    );
   }
 
-  // Delete Post
-  Future<void> deletePost(String postId) async {
-    await _firestore
-        .collection(_collection)
-        .doc(postId)
-        .delete();
-  }
+  // ==========================================
+  // UPDATE POST
+  // ==========================================
 
-  // Update Post
   Future<void> updatePost(
       String postId,
       String description,
       ) async {
-    await _firestore
-        .collection(_collection)
+    await _postsCollection
         .doc(postId)
         .update({
-      "description": description,
+      'description': description,
     });
+  }
+
+  // ==========================================
+  // DELETE POST
+  // ==========================================
+
+  Future<void> deletePost(String postId) async {
+    await _postsCollection
+        .doc(postId)
+        .delete();
   }
 }

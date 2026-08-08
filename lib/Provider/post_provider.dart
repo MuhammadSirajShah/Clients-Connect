@@ -9,17 +9,27 @@ class PostProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
+  // ==========================================
+  // LOADING
+  // ==========================================
+
   void setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
-  // Realtime Posts Stream
+  // ==========================================
+  // REALTIME POSTS
+  // ==========================================
+
   Stream<List<PostModel>> get postsStream {
     return _postService.getPosts();
   }
 
-  // Create Post
+  // ==========================================
+  // CREATE POST
+  // ==========================================
+
   Future<String?> createPost(PostModel post) async {
     try {
       setLoading(true);
@@ -28,17 +38,22 @@ class PostProvider extends ChangeNotifier {
 
       return null;
     } catch (e) {
-      return "Failed to create post.";
+      debugPrint("Create Post Error: $e");
+
+      return "Failed to create post. Please try again.";
     } finally {
       setLoading(false);
     }
   }
 
-  // Update Post
-  Future<String?> updatePost(
-      String postId,
-      String description,
-      ) async {
+  // ==========================================
+  // UPDATE POST
+  // ==========================================
+
+  Future<String?> updatePost({
+    required String postId,
+    required String description,
+  }) async {
     try {
       setLoading(true);
 
@@ -49,13 +64,18 @@ class PostProvider extends ChangeNotifier {
 
       return null;
     } catch (e) {
+      debugPrint("Update Post Error: $e");
+
       return "Failed to update post.";
     } finally {
       setLoading(false);
     }
   }
 
-  // Delete Post
+  // ==========================================
+  // DELETE POST
+  // ==========================================
+
   Future<String?> deletePost(String postId) async {
     try {
       setLoading(true);
@@ -64,6 +84,8 @@ class PostProvider extends ChangeNotifier {
 
       return null;
     } catch (e) {
+      debugPrint("Delete Post Error: $e");
+
       return "Failed to delete post.";
     } finally {
       setLoading(false);

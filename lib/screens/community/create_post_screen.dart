@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -17,9 +20,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _budgetController =
   TextEditingController();
 
+  final ImagePicker _imagePicker = ImagePicker();
+
+  final List<File> _selectedImages = [];
+
   String? _selectedTechnology;
 
   bool _isAnonymous = false;
+
+  bool _isLoading = false;
 
   final List<String> _technologies = [
     "Flutter",
@@ -35,24 +44,114 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _budgetController.dispose();
+
     super.dispose();
   }
 
-  void _postDiscussion() {
+  // ==========================================
+  // PICK MULTIPLE IMAGES
+  // ==========================================
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> pickedImages =
+      await _imagePicker.pickMultiImage(
+        imageQuality: 85,
+      );
+
+      if (pickedImages.isEmpty) {
+        return;
+      }
+
+      setState(() {
+        for (final image in pickedImages) {
+          if (_selectedImages.length >= 10) {
+            break;
+          }
+
+          final File file = File(image.path);
+
+          if (!_selectedImages.any(
+                (existingImage) =>
+            existingImage.path == file.path,
+          )) {
+            _selectedImages.add(file);
+          }
+        }
+      });
+
+      if (pickedImages.length + _selectedImages.length > 10) {
+        _showMessage(
+          "You can upload maximum 10 images.",
+        );
+      }
+    } catch (e) {
+      _showMessage(
+        "Unable to select images.",
+      );
+    }
+  }
+
+  // ==========================================
+  // REMOVE IMAGE
+  // ==========================================
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
+  // ==========================================
+  // POST
+  // ==========================================
+
+  Future<void> _postDiscussion() async {
     FocusScope.of(context).unfocus();
 
     if (_titleController.text.trim().isEmpty) {
-      _showMessage("Please enter a discussion title.");
+      _showMessage(
+        "Please enter discussion title.",
+      );
       return;
     }
 
     if (_descriptionController.text.trim().isEmpty) {
-      _showMessage("Please enter a description.");
+      _showMessage(
+        "Please enter description.",
+      );
       return;
     }
 
-    _showMessage("Discussion is ready to post.");
+    setState(() {
+      _isLoading = true;
+    });
+
+    /*
+      Firebase Post functionality
+      next step me yahan connect hogi.
+
+      Currently only UI testing.
+    */
+
+    await Future.delayed(
+      const Duration(milliseconds: 800),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    _showMessage(
+      "Discussion is ready to post.",
+    );
   }
+
+  // ==========================================
+  // SNACKBAR
+  // ==========================================
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
@@ -73,9 +172,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // =========================
-            // TOP BAR
-            // =========================
+            // ==================================
+            // APP BAR
+            // ==================================
 
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -89,7 +188,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       Navigator.pop(context);
                     },
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints:
+                    const BoxConstraints(),
                     icon: const Icon(
                       Icons.close,
                       size: 24,
@@ -111,13 +211,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
 
                   GestureDetector(
-                    onTap: _postDiscussion,
-                    child: const Text(
-                      "Post",
+                    onTap:
+                    _isLoading
+                        ? null
+                        : _postDiscussion,
+                    child: Text(
+                      _isLoading
+                          ? "Posting..."
+                          : "Post",
                       style: TextStyle(
-                        color: Color(0xff6D5DF6),
+                        color: _isLoading
+                            ? Colors.grey
+                            : const Color(
+                          0xff6D5DF6,
+                        ),
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontWeight:
+                        FontWeight.w700,
                       ),
                     ),
                   ),
@@ -125,24 +235,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
             ),
 
-            // =========================
+            // ==================================
             // CONTENT
-            // =========================
+            // ==================================
 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
+                padding:
+                const EdgeInsets.fromLTRB(
                   16,
                   8,
                   16,
                   30,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
                   children: [
-                    // =========================
+                    // ==========================
                     // TITLE
-                    // =========================
+                    // ==========================
 
                     const _FieldLabel(
                       title: "Title",
@@ -151,52 +263,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller: _titleController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        hintText: "Enter discussion title",
-                        hintStyle: TextStyle(
-                          color: Color(0xff94A3B8),
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xff6D5DF6),
-                          ),
-                        ),
+                      controller:
+                      _titleController,
+                      textInputAction:
+                      TextInputAction.next,
+                      decoration:
+                      _inputDecoration(
+                        hintText:
+                        "Enter discussion title",
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // =========================
+                    // ==========================
                     // DESCRIPTION
-                    // =========================
+                    // ==========================
 
                     const _FieldLabel(
                       title: "Description",
@@ -205,51 +287,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller: _descriptionController,
+                      controller:
+                      _descriptionController,
                       maxLines: 5,
-                      textInputAction: TextInputAction.newline,
-                      decoration: const InputDecoration(
+                      textInputAction:
+                      TextInputAction.newline,
+                      decoration:
+                      _inputDecoration(
                         hintText:
                         "Write your question or details...",
-                        hintStyle: TextStyle(
-                          color: Color(0xff94A3B8),
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: EdgeInsets.all(14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xff6D5DF6),
-                          ),
-                        ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // =========================
+                    // ==========================
                     // BUDGET
-                    // =========================
+                    // ==========================
 
                     const _FieldLabel(
                       title: "Budget (Optional)",
@@ -258,56 +312,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller: _budgetController,
+                      controller:
+                      _budgetController,
                       keyboardType:
-                      const TextInputType.numberWithOptions(
+                      const TextInputType
+                          .numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: const InputDecoration(
+                      decoration:
+                      _inputDecoration(
                         hintText:
                         "Enter budget amount (e.g. \$1500)",
-                        hintStyle: TextStyle(
-                          color: Color(0xff94A3B8),
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xff6D5DF6),
-                          ),
-                        ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // =========================
+                    // ==========================
                     // TECHNOLOGY
-                    // =========================
+                    // ==========================
 
                     const _FieldLabel(
                       title: "Technology",
@@ -316,55 +339,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     DropdownButtonFormField<String>(
-                      value: _selectedTechnology,
-                      decoration: const InputDecoration(
-                        hintText: "Select technology",
-                        hintStyle: TextStyle(
-                          color: Color(0xff94A3B8),
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xffE2E8F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(9),
-                          ),
-                          borderSide: BorderSide(
-                            color: Color(0xff6D5DF6),
-                          ),
-                        ),
+                      value:
+                      _selectedTechnology,
+                      decoration:
+                      _inputDecoration(
+                        hintText:
+                        "Select technology",
                       ),
                       icon: const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Color(0xff64748B),
+                        Icons
+                            .keyboard_arrow_down,
+                        color:
+                        Color(0xff64748B),
                       ),
-                      items: _technologies.map(
-                            (technology) {
-                          return DropdownMenuItem<String>(
-                            value: technology,
+                      items:
+                      _technologies
+                          .map(
+                            (
+                            technology,
+                            ) {
+                          return DropdownMenuItem<
+                              String>(
+                            value:
+                            technology,
                             child: Text(
                               technology,
-                              style: const TextStyle(
+                              style:
+                              const TextStyle(
                                 fontSize: 14,
                               ),
                             ),
@@ -373,64 +374,171 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ).toList(),
                       onChanged: (value) {
                         setState(() {
-                          _selectedTechnology = value;
+                          _selectedTechnology =
+                              value;
                         });
                       },
                     ),
 
                     const SizedBox(height: 20),
 
-                    // =========================
-                    // IMAGES
-                    // =========================
+                    // ==========================
+                    // ADD IMAGES
+                    // ==========================
 
                     const _FieldLabel(
-                      title: "Add Images (Optional)",
+                      title:
+                      "Add Images (Optional)",
                     ),
 
                     const SizedBox(height: 10),
 
                     GestureDetector(
-                      onTap: () {
-                        _showMessage(
-                          "Image picker will be added next.",
-                        );
-                      },
+                      onTap: _selectedImages.length >=
+                          10
+                          ? null
+                          : _pickImages,
                       child: Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
+                        width: 56,
+                        height: 56,
+                        decoration:
+                        BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius:
+                          BorderRadius.circular(
+                            10,
+                          ),
                           border: Border.all(
-                            color: const Color(0xffA5B4FC),
-                            style: BorderStyle.solid,
+                            color: const Color(
+                              0xffA5B4FC,
+                            ),
                           ),
                         ),
                         child: const Icon(
                           Icons.add,
-                          color: Color(0xff6D5DF6),
-                          size: 24,
+                          color:
+                          Color(0xff6D5DF6),
+                          size: 25,
                         ),
                       ),
                     ),
 
+                    // ==========================
+                    // IMAGE PREVIEW
+                    // ==========================
+
+                    if (_selectedImages
+                        .isNotEmpty) ...[
+                      const SizedBox(height: 15),
+
+                      SizedBox(
+                        height: 100,
+                        child: ListView.separated(
+                          scrollDirection:
+                          Axis.horizontal,
+                          itemCount:
+                          _selectedImages
+                              .length,
+                          separatorBuilder:
+                              (
+                              context,
+                              index,
+                              ) =>
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          itemBuilder:
+                              (
+                              context,
+                              index,
+                              ) {
+                            return Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius:
+                                  BorderRadius
+                                      .circular(
+                                    10,
+                                  ),
+                                  child:
+                                  Image.file(
+                                    _selectedImages[
+                                    index],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+
+                                Positioned(
+                                  top: 5,
+                                  right: 5,
+                                  child:
+                                  GestureDetector(
+                                    onTap: () {
+                                      _removeImage(
+                                        index,
+                                      );
+                                    },
+                                    child:
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration:
+                                      const BoxDecoration(
+                                        color:
+                                        Colors.black54,
+                                        shape:
+                                        BoxShape
+                                            .circle,
+                                      ),
+                                      child:
+                                      const Icon(
+                                        Icons.close,
+                                        color:
+                                        Colors.white,
+                                        size: 15,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        "${_selectedImages.length}/10 images selected",
+                        style: const TextStyle(
+                          color:
+                          Color(0xff64748B),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 20),
 
-                    // =========================
+                    // ==========================
                     // ANONYMOUS POST
-                    // =========================
+                    // ==========================
 
                     Row(
                       mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                      MainAxisAlignment
+                          .spaceBetween,
                       children: [
                         const Text(
                           "Anonymous Post",
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xff334155),
+                            fontWeight:
+                            FontWeight.w500,
+                            color:
+                            Color(0xff334155),
                           ),
                         ),
 
@@ -438,15 +546,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           value: _isAnonymous,
                           onChanged: (value) {
                             setState(() {
-                              _isAnonymous = value;
+                              _isAnonymous =
+                                  value;
                             });
                           },
-                          activeColor: Colors.white,
+                          activeColor:
+                          Colors.white,
                           activeTrackColor:
-                          const Color(0xff6D5DF6),
-                          inactiveThumbColor: Colors.white,
+                          Color(0xff6D5DF6),
+                          inactiveThumbColor:
+                          Colors.white,
                           inactiveTrackColor:
-                          const Color(0xffCBD5E1),
+                          Color(0xffCBD5E1),
                         ),
                       ],
                     ),
@@ -457,6 +568,50 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // INPUT DECORATION
+  // ==========================================
+
+  InputDecoration _inputDecoration({
+    required String hintText,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: Color(0xff94A3B8),
+        fontSize: 13,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding:
+      const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 14,
+      ),
+      border: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(9),
+        borderSide: const BorderSide(
+          color: Color(0xffE2E8F0),
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(9),
+        borderSide: const BorderSide(
+          color: Color(0xffE2E8F0),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(9),
+        borderSide: const BorderSide(
+          color: Color(0xff6D5DF6),
         ),
       ),
     );
