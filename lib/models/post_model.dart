@@ -5,9 +5,18 @@ class PostModel {
   final String userId;
   final String userName;
   final String? userImage;
+
+  final String title;
   final String description;
+  final String? budget;
+  final String? technology;
+
+  final List<String> images;
+  final bool isAnonymous;
+
   final int likesCount;
   final int commentsCount;
+
   final DateTime createdAt;
 
   PostModel({
@@ -15,9 +24,14 @@ class PostModel {
     required this.userId,
     required this.userName,
     this.userImage,
+    required this.title,
     required this.description,
-    required this.likesCount,
-    required this.commentsCount,
+    this.budget,
+    this.technology,
+    this.images = const [],
+    this.isAnonymous = false,
+    this.likesCount = 0,
+    this.commentsCount = 0,
     required this.createdAt,
   });
 
@@ -27,9 +41,18 @@ class PostModel {
       'userId': userId,
       'userName': userName,
       'userImage': userImage,
+
+      'title': title,
       'description': description,
+      'budget': budget,
+      'technology': technology,
+
+      'images': images,
+      'isAnonymous': isAnonymous,
+
       'likesCount': likesCount,
       'commentsCount': commentsCount,
+
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -38,12 +61,28 @@ class PostModel {
     return PostModel(
       postId: map['postId'] ?? '',
       userId: map['userId'] ?? '',
+
       userName: map['userName'] ?? '',
       userImage: map['userImage'],
+
+      title: map['title'] ?? '',
       description: map['description'] ?? '',
+
+      budget: map['budget'],
+      technology: map['technology'],
+
+      images: List<String>.from(
+        map['images'] ?? [],
+      ),
+
+      isAnonymous: map['isAnonymous'] ?? false,
+
       likesCount: map['likesCount'] ?? 0,
       commentsCount: map['commentsCount'] ?? 0,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+
+      createdAt: map['createdAt'] is Timestamp
+          ? (map['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
     );
   }
 }

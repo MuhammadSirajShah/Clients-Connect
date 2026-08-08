@@ -1,3 +1,4 @@
+import 'package:client_connect/screens/community/create_post_screen.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeBanner extends StatelessWidget {
@@ -54,7 +55,9 @@ class WelcomeBanner extends StatelessWidget {
           SizedBox(
             height: 50,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => CreatePostScreen()));
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xff2563EB),

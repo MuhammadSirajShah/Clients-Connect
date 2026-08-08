@@ -45,7 +45,6 @@ class PostTile extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       Text(
                         DateFormat(
                           'dd MMM yyyy • hh:mm a',
