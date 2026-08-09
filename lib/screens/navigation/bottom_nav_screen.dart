@@ -27,9 +27,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: pages[currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-
+      bottomNavigationBar: BottomNavigationBar(currentIndex: currentIndex,
         onTap: (index){
           setState(() {
             currentIndex = index;

@@ -35,6 +35,10 @@ class PostModel {
     required this.createdAt,
   });
 
+  // ==========================================
+  // TO MAP
+  // ==========================================
+
   Map<String, dynamic> toMap() {
     return {
       'postId': postId,
@@ -53,11 +57,19 @@ class PostModel {
       'likesCount': likesCount,
       'commentsCount': commentsCount,
 
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': Timestamp.fromDate(
+        createdAt,
+      ),
     };
   }
 
-  factory PostModel.fromMap(Map<String, dynamic> map) {
+  // ==========================================
+  // FROM MAP
+  // ==========================================
+
+  factory PostModel.fromMap(
+      Map<String, dynamic> map,
+      ) {
     return PostModel(
       postId: map['postId'] ?? '',
       userId: map['userId'] ?? '',
@@ -75,13 +87,19 @@ class PostModel {
         map['images'] ?? [],
       ),
 
-      isAnonymous: map['isAnonymous'] ?? false,
+      isAnonymous:
+      map['isAnonymous'] ?? false,
 
-      likesCount: map['likesCount'] ?? 0,
-      commentsCount: map['commentsCount'] ?? 0,
+      likesCount:
+      map['likesCount'] ?? 0,
 
-      createdAt: map['createdAt'] is Timestamp
-          ? (map['createdAt'] as Timestamp).toDate()
+      commentsCount:
+      map['commentsCount'] ?? 0,
+
+      createdAt:
+      map['createdAt'] is Timestamp
+          ? (map['createdAt'] as Timestamp)
+          .toDate()
           : DateTime.now(),
     );
   }

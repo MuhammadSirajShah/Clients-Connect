@@ -1,7 +1,13 @@
 import 'dart:io';
 
+import 'package:client_connect/Provider/auth_provider.dart';
+import 'package:client_connect/Provider/post_provider.dart';
+import 'package:client_connect/models/post_model.dart';
+import 'package:client_connect/screens/navigation/bottom_nav_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -11,24 +17,17 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
-  final TextEditingController _titleController =
-  TextEditingController();
 
-  final TextEditingController _descriptionController =
-  TextEditingController();
 
-  final TextEditingController _budgetController =
-  TextEditingController();
-
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _budgetController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
-
   final List<File> _selectedImages = [];
 
   String? _selectedTechnology;
 
   bool _isAnonymous = false;
-
-  bool _isLoading = false;
 
   final List<String> _technologies = [
     "Flutter",
@@ -44,7 +43,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _budgetController.dispose();
-
     super.dispose();
   }
 
@@ -65,29 +63,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       setState(() {
         for (final image in pickedImages) {
-          if (_selectedImages.length >= 10) {
-            break;
-          }
-
-          final File file = File(image.path);
+          final file = File(image.path);
 
           if (!_selectedImages.any(
-                (existingImage) =>
-            existingImage.path == file.path,
+                (existing) => existing.path == file.path,
           )) {
             _selectedImages.add(file);
           }
         }
       });
-
-      if (pickedImages.length + _selectedImages.length > 10) {
-        _showMessage(
-          "You can upload maximum 10 images.",
-        );
-      }
     } catch (e) {
       _showMessage(
         "Unable to select images.",
+        isError: true,
       );
     }
   }
@@ -103,15 +91,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   // ==========================================
-  // POST
+  // CREATE POST
   // ==========================================
 
   Future<void> _postDiscussion() async {
     FocusScope.of(context).unfocus();
-
     if (_titleController.text.trim().isEmpty) {
       _showMessage(
         "Please enter discussion title.",
+        isError: true,
       );
       return;
     }
@@ -119,47 +107,85 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (_descriptionController.text.trim().isEmpty) {
       _showMessage(
         "Please enter description.",
+        isError: true,
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final authProvider = context.read<AuthProvider>();
+    final postProvider = context.read<PostProvider>();
+    final user = authProvider.currentUser;
 
-    /*
-      Firebase Post functionality
-      next step me yahan connect hogi.
+    if (user == null) {
+      _showMessage(
+        "Please login first.",
+        isError: true,
+      );
+      return;
+    }
 
-      Currently only UI testing.
-    */
+    final postId = const Uuid().v4();
 
-    await Future.delayed(
-      const Duration(milliseconds: 800),
+    final post = PostModel(
+      postId: postId,
+      userId: user.uid,
+      userName: _isAnonymous
+          ? "Anonymous"
+          : (user.displayName ?? "User"),
+      userImage: _isAnonymous ? null : user.photoURL,
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+      budget: _budgetController.text.trim().isEmpty
+          ? null
+          : _budgetController.text.trim(),
+      technology: _selectedTechnology,
+      images: const [],
+      isAnonymous: _isAnonymous,
+      likesCount: 0,
+      commentsCount: 0,
+      createdAt: DateTime.now(),
+    );
+
+    final error = await postProvider.createPost(
+      post: post,
+      images: _selectedImages,
     );
 
     if (!mounted) return;
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (error == null) {
+      if (!mounted) return;
 
-    _showMessage(
-      "Discussion is ready to post.",
-    );
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>
+          const BottomNavScreen(),
+        ),
+            (route) => false,
+      );
+    } else {
+      _showMessage(
+        error,
+        isError: true,
+      );
+    }
   }
 
   // ==========================================
-  // SNACKBAR
+  // MESSAGE
   // ==========================================
 
-  void _showMessage(String message) {
+  void _showMessage(
+      String message, {
+        bool isError = false,
+      }) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          behavior: SnackBarBehavior.floating,
+          backgroundColor:
+          isError ? Colors.red : Colors.green,
+          behavior:
+          SnackBarBehavior.floating,
         ),
       );
   }
@@ -177,59 +203,41 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             // ==================================
 
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12,
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () {
+                  IconButton(onPressed: () {
                       Navigator.pop(context);
                     },
                     padding: EdgeInsets.zero,
-                    constraints:
-                    const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.close,
-                      size: 24,
-                      color: Color(0xff1E293B),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.close, size: 24, color: Color(0xff1E293B),
                     ),
                   ),
 
                   const Expanded(
                     child: Center(
-                      child: Text(
-                        "Create Discussion",
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xff111827),
+                      child: Text("Create Discussion", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xff111827),
                         ),
                       ),
                     ),
                   ),
 
-                  GestureDetector(
-                    onTap:
-                    _isLoading
-                        ? null
-                        : _postDiscussion,
-                    child: Text(
-                      _isLoading
-                          ? "Posting..."
-                          : "Post",
-                      style: TextStyle(
-                        color: _isLoading
-                            ? Colors.grey
-                            : const Color(
-                          0xff6D5DF6,
+                  Consumer<PostProvider>(
+                    builder: (context, provider, child,) {
+                      return GestureDetector(
+                        onTap: provider.isLoading
+                            ? null
+                            : _postDiscussion,
+                        child: Text(provider.isLoading ? "Posting..." : "Post", style: TextStyle(
+                          color: provider.isLoading
+                                ? Colors.grey
+                                : const Color(0xff6D5DF6), fontSize: 15, fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        fontSize: 15,
-                        fontWeight:
-                        FontWeight.w700,
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -241,21 +249,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
             Expanded(
               child: SingleChildScrollView(
-                padding:
-                const EdgeInsets.fromLTRB(
-                  16,
-                  8,
-                  16,
-                  30,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 30,),
                 child: Column(
                   crossAxisAlignment:
                   CrossAxisAlignment.start,
                   children: [
-                    // ==========================
-                    // TITLE
-                    // ==========================
-
                     const _FieldLabel(
                       title: "Title",
                     ),
@@ -263,22 +261,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller:
-                      _titleController,
-                      textInputAction:
-                      TextInputAction.next,
-                      decoration:
-                      _inputDecoration(
-                        hintText:
-                        "Enter discussion title",
+                      controller: _titleController,
+                      textInputAction: TextInputAction.next,
+                      decoration: _inputDecoration(
+                        hintText: "Enter discussion title",
                       ),
                     ),
 
                     const SizedBox(height: 20),
-
-                    // ==========================
-                    // DESCRIPTION
-                    // ==========================
 
                     const _FieldLabel(
                       title: "Description",
@@ -287,50 +277,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller:
-                      _descriptionController,
+                      controller: _descriptionController,
                       maxLines: 5,
-                      textInputAction:
-                      TextInputAction.newline,
-                      decoration:
-                      _inputDecoration(
-                        hintText:
-                        "Write your question or details...",
+                      decoration: _inputDecoration(
+                        hintText: "Write your question or details...",
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // ==========================
-                    // BUDGET
-                    // ==========================
-
                     const _FieldLabel(
-                      title: "Budget (Optional)",
+                      title:
+                      "Budget (Optional)",
                     ),
 
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller:
-                      _budgetController,
-                      keyboardType:
-                      const TextInputType
-                          .numberWithOptions(
+                      controller: _budgetController,
+                      keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration:
-                      _inputDecoration(
-                        hintText:
-                        "Enter budget amount (e.g. \$1500)",
+                      decoration: _inputDecoration(
+                        hintText: "Enter budget amount",
                       ),
                     ),
 
                     const SizedBox(height: 20),
-
-                    // ==========================
-                    // TECHNOLOGY
-                    // ==========================
 
                     const _FieldLabel(
                       title: "Technology",
@@ -339,36 +312,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 8),
 
                     DropdownButtonFormField<String>(
-                      value:
-                      _selectedTechnology,
-                      decoration:
-                      _inputDecoration(
-                        hintText:
-                        "Select technology",
-                      ),
-                      icon: const Icon(
-                        Icons
-                            .keyboard_arrow_down,
-                        color:
-                        Color(0xff64748B),
-                      ),
-                      items:
-                      _technologies
-                          .map(
-                            (
-                            technology,
-                            ) {
-                          return DropdownMenuItem<
-                              String>(
-                            value:
-                            technology,
-                            child: Text(
-                              technology,
-                              style:
-                              const TextStyle(
-                                fontSize: 14,
-                              ),
-                            ),
+                      value: _selectedTechnology,
+                      decoration: _inputDecoration(
+                        hintText: "Select technology"),
+                      items: _technologies
+                          .map((technology) {
+                          return DropdownMenuItem<String>(
+                            value: technology,
+                            child: Text(technology),
                           );
                         },
                       ).toList(),
@@ -382,10 +333,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
                     const SizedBox(height: 20),
 
-                    // ==========================
-                    // ADD IMAGES
-                    // ==========================
-
                     const _FieldLabel(
                       title:
                       "Add Images (Optional)",
@@ -394,76 +341,41 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     const SizedBox(height: 10),
 
                     GestureDetector(
-                      onTap: _selectedImages.length >=
-                          10
-                          ? null
-                          : _pickImages,
+                      onTap: _pickImages,
                       child: Container(
                         width: 56,
                         height: 56,
-                        decoration:
-                        BoxDecoration(
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius:
-                          BorderRadius.circular(
-                            10,
-                          ),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: const Color(
-                              0xffA5B4FC,
-                            ),
+                            color: const Color(0xffA5B4FC),
                           ),
                         ),
                         child: const Icon(
                           Icons.add,
-                          color:
-                          Color(0xff6D5DF6),
-                          size: 25,
+                          color: Color(0xff6D5DF6),
                         ),
                       ),
                     ),
 
-                    // ==========================
-                    // IMAGE PREVIEW
-                    // ==========================
-
-                    if (_selectedImages
-                        .isNotEmpty) ...[
+                    if (_selectedImages.isNotEmpty) ...[
                       const SizedBox(height: 15),
 
                       SizedBox(
                         height: 100,
                         child: ListView.separated(
-                          scrollDirection:
-                          Axis.horizontal,
-                          itemCount:
-                          _selectedImages
-                              .length,
-                          separatorBuilder:
-                              (
-                              context,
-                              index,
-                              ) =>
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          itemBuilder:
-                              (
-                              context,
-                              index,
-                              ) {
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _selectedImages.length,
+                          separatorBuilder: (context, index,) =>
+                          const SizedBox(width: 10,),
+                          itemBuilder: (context, index){
                             return Stack(
                               children: [
                                 ClipRRect(
-                                  borderRadius:
-                                  BorderRadius
-                                      .circular(
-                                    10,
-                                  ),
-                                  child:
-                                  Image.file(
-                                    _selectedImages[
-                                    index],
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.file(
+                                    _selectedImages[index],
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
@@ -473,32 +385,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 Positioned(
                                   top: 5,
                                   right: 5,
-                                  child:
-                                  GestureDetector(
+                                  child: GestureDetector(
                                     onTap: () {
-                                      _removeImage(
-                                        index,
-                                      );
+                                      _removeImage(index);
                                     },
-                                    child:
-                                    Container(
+                                    child: Container(
                                       width: 24,
                                       height: 24,
-                                      decoration:
-                                      const BoxDecoration(
-                                        color:
-                                        Colors.black54,
-                                        shape:
-                                        BoxShape
-                                            .circle,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
                                       ),
-                                      child:
-                                      const Icon(
-                                        Icons.close,
-                                        color:
-                                        Colors.white,
-                                        size: 15,
-                                      ),
+                                      child: const Icon(
+                                        Icons.close, color: Colors.white, size: 15),
                                     ),
                                   ),
                                 ),
@@ -510,59 +409,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
                       const SizedBox(height: 8),
 
-                      Text(
-                        "${_selectedImages.length}/10 images selected",
-                        style: const TextStyle(
-                          color:
-                          Color(0xff64748B),
-                          fontSize: 12,
+                      Text("${_selectedImages.length}/10 images selected", style: TextStyle(
+                          color: Color(0xff64748B),fontSize: 12,
                         ),
                       ),
                     ],
 
                     const SizedBox(height: 20),
 
-                    // ==========================
-                    // ANONYMOUS POST
-                    // ==========================
-
                     Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment
-                          .spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Anonymous Post",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                            FontWeight.w500,
-                            color:
-                            Color(0xff334155),
+                        const Text("Anonymous Post", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
+                            color: Color(0xff334155),
                           ),
                         ),
 
-                        Switch(
-                          value: _isAnonymous,
+                        Switch(value: _isAnonymous,
                           onChanged: (value) {
-                            setState(() {
-                              _isAnonymous =
-                                  value;
+                            setState(() {_isAnonymous = value;
                             });
                           },
-                          activeColor:
-                          Colors.white,
-                          activeTrackColor:
-                          Color(0xff6D5DF6),
-                          inactiveThumbColor:
-                          Colors.white,
-                          inactiveTrackColor:
-                          Color(0xffCBD5E1),
+                          activeTrackColor: const Color(0xff6D5DF6),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -572,10 +443,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
     );
   }
-
-  // ==========================================
-  // INPUT DECORATION
-  // ==========================================
 
   InputDecoration _inputDecoration({
     required String hintText,
@@ -588,14 +455,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
       filled: true,
       fillColor: Colors.white,
-      contentPadding:
-      const EdgeInsets.symmetric(
+      contentPadding: const EdgeInsets.symmetric(
         horizontal: 14,
         vertical: 14,
       ),
       border: OutlineInputBorder(
-        borderRadius:
-        BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(9),
         borderSide: const BorderSide(
           color: Color(0xffE2E8F0),
         ),
@@ -608,8 +473,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius:
-        BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(9),
         borderSide: const BorderSide(
           color: Color(0xff6D5DF6),
         ),
